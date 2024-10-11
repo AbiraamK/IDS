@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Visualization of Sensor Data</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.0.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.0.1/firebase-database.js"></script>
+    <script>
+        // Your Firebase configuration here
+        var firebaseConfig = {
+            apiKey: "AIzaSyC65krKe79fElnCy9Zvwgnc-OjZ0rzFgBo",
+            authDomain: "testproject-1858b.firebaseapp.com",
+            databaseURL: "https://testproject-1858b-default-rtdb.firebaseio.com/",
+            projectId: "testproject-1858b",
+            storageBucket: "testproject-1858b.appspot.com",
+            messagingSenderId: "521289626475",
+            appId: "1:521289626475:web:29f84d27b89ae30c06522e",
+            measurementId: "G-2BFGF4JQC2"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Load Google Charts
+        google.charts.load('current', { 'packages': ['corechart'] });
+        google.charts.setOnLoadCallback(drawChart);
+
+        let alarmTimer = null;
+
+        function drawChart() {
+            var data = new google.visualization.DataTable();
+            data.addColumn('string', 'Sensor');
+            data.addColumn('number', 'Value');
+
+            // Fetch ultrasonic distance data from Firebase
+            firebase.database().ref('ultrasonic').on('value', function (snapshot) {
+                var distance = snapshot.val().distance;
+                data.addRow(['Distance', distance]);
+
+                var options = {
+                    title: 'Ultrasonic Sensor Data',
+                    width: 550,
+                    height: 400
+                };
+                var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+                chart.draw(data, options);
+            });
+
+            // Fetch and display alarm status
+            firebase.database().ref('alarm').on('value', function (snapshot) {
+                var alarmStatus = snapshot.val();
+                document.getElementById("alarm_status").innerHTML = "Alarm Status: " + alarmStatus;
+
+                if (alarmStatus === "active") {
+                    if (alarmTimer === null) {
+                        alarmTimer = setTimeout(function() {
+                            document.getElementById("calling_911_status").innerHTML = "Calling 911...";
+                        }, 5000);
+                    }
+                } else {
+                    clearTimeout(alarmTimer);
+                    alarmTimer = null;
+                    document.getElementById("calling_911_status").innerHTML = "";
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <h2>Sensor Data Visualization</h2>
+    <div id="chart_div" style="width: 100%; height: 100%;"></div>
+    <div>
+        <p id="alarm_status"></p>
+        <p id="calling_911_status"></p>
+    </div>
+</body>
+</html>
